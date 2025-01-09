@@ -1,28 +1,23 @@
-from openai import OpenAI
-from typing import List, Dict
-import json
 import os
+import json
+from typing import List, Dict
 from dotenv import load_dotenv
+from openai import OpenAI
 
 # Carica variabili d'ambiente
 load_dotenv()
 
-# Rimuovi eventuali configurazioni di proxy dall'ambiente
-if 'http_proxy' in os.environ:
-    del os.environ['http_proxy']
-if 'https_proxy' in os.environ:
-    del os.environ['https_proxy']
-if 'HTTPS_PROXY' in os.environ:
-    del os.environ['HTTPS_PROXY']
-if 'HTTP_PROXY' in os.environ:
-    del os.environ['HTTP_PROXY']
+def create_client():
+    # Prendi la API key dall'ambiente
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY non trovata nelle variabili d'ambiente")
+        
+    return OpenAI()  # La libreria prenderà automaticamente la API key dall'ambiente
 
 def process_receipts(base64_images: List[str]) -> List[Dict]:
-    # Inizializzazione base del client
-    client = OpenAI(
-        api_key=os.getenv('OPENAI_API_KEY')
-    )
-    
+    # Crea un nuovo client per ogni sessione
+    client = create_client()
     results = []
     
     for image in base64_images:
@@ -35,7 +30,7 @@ def process_receipts(base64_images: List[str]) -> List[Dict]:
                         "content": [
                             {
                                 "type": "text",
-                                "text": "Analizza questo scontrino e fornisci i dati in formato JSON"
+                                "text": "Analizza questo scontrino"
                             },
                             {
                                 "type": "image_url",
@@ -68,13 +63,7 @@ def process_receipts(base64_images: List[str]) -> List[Dict]:
                                     "data": {"type": "string"},
                                     "ora": {"type": "string"},
                                     "documento_gestionale": {"type": "integer"}
-                                },
-                                "required": [
-                                    "societa", "indirizzo", "totale", "imponibile", "iva",
-                                    "totale_contanti", "totale_electronic", "totale_non_risc",
-                                    "totale_sconto", "documenti_commerciali", "matricola",
-                                    "data", "ora", "documento_gestionale"
-                                ]
+                                }
                             }
                         }
                     }
@@ -87,7 +76,7 @@ def process_receipts(base64_images: List[str]) -> List[Dict]:
             results.append(receipt_data)
             
         except Exception as e:
-            print(f"Error processing image: {str(e)}")
+            print(f"Errore durante l'elaborazione dell'immagine: {str(e)}")
             raise
     
     return results
