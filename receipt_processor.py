@@ -7,14 +7,22 @@ from dotenv import load_dotenv
 # Carica variabili d'ambiente
 load_dotenv()
 
-def process_receipts(base64_images: List[str]) -> List[Dict]:
-    # Inizializza il client OpenAI nel modo più semplice possibile
-    try:
-        client = OpenAI()
-    except Exception as e:
-        print(f"Error initializing OpenAI client: {str(e)}")
-        raise
+# Rimuovi eventuali configurazioni di proxy dall'ambiente
+if 'http_proxy' in os.environ:
+    del os.environ['http_proxy']
+if 'https_proxy' in os.environ:
+    del os.environ['https_proxy']
+if 'HTTPS_PROXY' in os.environ:
+    del os.environ['HTTPS_PROXY']
+if 'HTTP_PROXY' in os.environ:
+    del os.environ['HTTP_PROXY']
 
+def process_receipts(base64_images: List[str]) -> List[Dict]:
+    # Inizializzazione base del client
+    client = OpenAI(
+        api_key=os.getenv('OPENAI_API_KEY')
+    )
+    
     results = []
     
     for image in base64_images:
