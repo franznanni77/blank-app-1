@@ -64,7 +64,6 @@ def process_receipts(base64_images: List[str]) -> List[Dict]:
             max_completion_tokens=2048
         )
         
-        # Extract the JSON from the response
         tool_call = response.choices[0].message.tool_calls[0]
         receipt_data = json.loads(tool_call.function.arguments)
         results.append(receipt_data)

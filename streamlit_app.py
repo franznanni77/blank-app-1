@@ -28,7 +28,6 @@ def main():
                     st.subheader(f"Receipt {i+1}")
                     st.json(result)
                 
-                # Add download button for all results
                 json_str = json.dumps(results, indent=2)
                 st.download_button(
                     "Download All Results",
