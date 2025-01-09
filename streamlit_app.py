@@ -1,7 +1,6 @@
 import streamlit as st
 from openai_processing import process_receipts
 
-
 def main():
     st.title("Estrazione dati scontrini")
 
@@ -20,22 +19,21 @@ def main():
         accept_multiple_files=True
     )
 
-    # Controlliamo la quantità minima e massima
+    # Verifica quantità minima e massima di file
     if uploaded_files:
         if len(uploaded_files) < 2:
             st.warning("Devi caricare almeno 2 file.")
         elif len(uploaded_files) > 10:
             st.warning("Puoi caricare al massimo 10 file.")
         else:
+            # Bottone per l'elaborazione
             if st.button("Elabora Scontrini"):
                 with st.spinner("Elaborazione in corso..."):
-                    # Richiama la funzione di elaborazione
                     output_json = process_receipts(uploaded_files)
-                
+
                 # Mostra i risultati
                 st.subheader("Risultato dell'elaborazione:")
                 st.json(output_json)
-
 
 if __name__ == "__main__":
     main()
