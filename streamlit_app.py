@@ -21,10 +21,21 @@ def get_openai_response(question):
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "user", "content": question}
-            ]
+            ],
+            temperature=0.7,
+            max_tokens=1000
         )
-        return response.choices[0].message.content
+        # Debug della risposta
+        st.write("Debug - Tipo di risposta:", type(response))
+        st.write("Debug - Contenuto risposta:", response)
+        
+        # Estrazione sicura del contenuto
+        if hasattr(response.choices[0].message, 'content'):
+            return response.choices[0].message.content
+        else:
+            return str(response.choices[0].message)
     except Exception as e:
+        st.error(f"Errore dettagliato: {str(e)}")
         return f"Si è verificato un errore: {str(e)}"
 
 # Bottone per inviare la domanda
