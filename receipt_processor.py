@@ -1,9 +1,19 @@
 from openai import OpenAI
 from typing import List, Dict
 import json
+import os
+from dotenv import load_dotenv
+
+# Carica variabili d'ambiente
+load_dotenv()
+
+# Configura client OpenAI
+api_key = os.getenv('OPENAI_API_KEY')
+if not api_key:
+    raise ValueError("OPENAI_API_KEY non trovata nelle variabili d'ambiente")
 
 def process_receipts(base64_images: List[str]) -> List[Dict]:
-    client = OpenAI()
+    client = OpenAI(api_key=api_key)
     results = []
     
     for image in base64_images:
