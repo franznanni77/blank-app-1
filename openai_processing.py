@@ -1,6 +1,6 @@
 import base64
 import json
-import openai import AsyncOpenAI
+import openai 
 
 # Se preferisci, puoi assegnare la tua API key direttamente qui
 # openai.api_key = "la-tua-api-key"
