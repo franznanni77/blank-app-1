@@ -1,8 +1,10 @@
 import base64
 import json
-import openai 
+import openai
+import os
 
-# Se preferisci, puoi assegnare la tua API key direttamente qui
+# Assicurati di avere la tua API key impostata come variabile d'ambiente
+# oppure assegnala direttamente qui (sconsigliato per motivi di sicurezza)
 # openai.api_key = "la-tua-api-key"
 
 def process_receipts(uploaded_files):
@@ -24,45 +26,42 @@ def process_receipts(uploaded_files):
         messages = [
             {
                 "role": "system",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": (
-                            "Act as a virtual administrative assistant and read only "
-                            "fiscal receipts labeled as \"documento gestionale di chiusura giornaliera.\" "
-                            "Extract the relevant data using the function \"estrazione_scontrino\" and "
-                            "return it as a single JSON file. The company information is always located "
-                            "on the second line of the receipt.\n\n"
-                            "# Steps\n\n"
-                            "1. Identify the fiscal receipt: Ensure the document is labeled as \"documento gestionale di chiusura giornaliera.\"\n"
-                            "2. Locate company information: The company name and details are always found on the second line.\n"
-                            "3. Process the receipt: Use the function \"estrazione_scontrino\" to extract necessary data.\n"
-                            "4. Format the data: Prepare the extracted data into a JSON structure, ensuring that it is saved as a single JSON file.\n\n"
-                            "# Output Format\n\n"
-                            "Provide the extracted information in a JSON format, capturing key details from the receipt as defined by "
-                            "the function \"estrazione_scontrino,\" and ensure it is output as a single JSON file.\n\n"
-                            "# Notes\n\n"
-                            "- Focus solely on the specified receipts, ignoring any that do not meet the criteria.\n"
-                            "- Ensure accuracy in data extraction and formatting into JSON."
-                        )
-                    }
-                ]
+                "content": (
+                    "Agisci come un assistente amministrativo virtuale e analizza solo "
+                    "le ricevute fiscali etichettate come 'documento gestionale di chiusura giornaliera'. "
+                    "Estrai i dati rilevanti utilizzando la funzione 'estrazione_scontrino' e "
+                    "restituiscili in un unico file JSON. Le informazioni sull'azienda sono sempre "
+                    "situate sulla seconda riga della ricevuta.\n\n"
+                    "# Passaggi\n\n"
+                    "1. Identifica la ricevuta fiscale: Assicurati che il documento sia etichettato come 'documento gestionale di chiusura giornaliera'.\n"
+                    "2. Trova le informazioni sull'azienda: Il nome e i dettagli dell'azienda si trovano sempre sulla seconda riga.\n"
+                    "3. Elabora la ricevuta: Utilizza la funzione 'estrazione_scontrino' per estrarre i dati necessari.\n"
+                    "4. Formatta i dati: Prepara i dati estratti in una struttura JSON, assicurandoti che sia salvata come un unico file JSON.\n\n"
+                    "# Formato di Output\n\n"
+                    "Fornisci le informazioni estratte in formato JSON, catturando i dettagli chiave della ricevuta come definito dalla "
+                    "funzione 'estrazione_scontrino', e assicurati che sia prodotto un unico file JSON.\n\n"
+                    "# Note\n\n"
+                    "- Concentrati esclusivamente sulle ricevute specificate, ignorando quelle che non soddisfano i criteri.\n"
+                    "- Garantisci accuratezza nell'estrazione dei dati e nella formattazione in JSON."
+                )
             },
             {
                 "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{base64_content}"}
-                    }
-                ]
+                "content": (
+                    "Ecco un'immagine della ricevuta in formato base64. "
+                    "Per favore, analizzala e fornisci i dati estratti."
+                )
+            },
+            {
+                "role": "user",
+                "content": f"data:image/jpeg;base64,{base64_content}"
             }
         ]
 
         try:
-            # Chiamata a OpenAI (versione > 1.0.0)
-            response = openai.chat.completion.create(
-                model="gpt-4o-mini",  # Sostituisci con un modello valido nel tuo ambiente
+            # Chiamata all'API di OpenAI
+            response = openai.ChatCompletion.create(
+                model="gpt-4",  # Sostituisci con un modello valido nel tuo ambiente
                 messages=messages,
                 temperature=0.22,
                 max_tokens=2048,
