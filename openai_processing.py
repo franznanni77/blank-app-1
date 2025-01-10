@@ -61,7 +61,7 @@ def process_receipts(uploaded_files):
 
         try:
             # Chiamata a OpenAI (versione > 1.0.0)
-            response = openai.ChatCompletion.create(
+            response = openai.chat.completion.create(
                 model="gpt-4o-mini",  # Sostituisci con un modello valido nel tuo ambiente
                 messages=messages,
                 temperature=0.22,
