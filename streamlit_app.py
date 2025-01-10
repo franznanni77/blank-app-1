@@ -1,46 +1,41 @@
 import streamlit as st
-from openai import OpenAI
+from openai_processing import process_receipts
 
-# Access the OpenAI API key from the secrets
-api_key = st.secrets["OPENAI_API_KEY"]
 
-# Set up the OpenAI API client
-client = OpenAI(api_key=api_key)
+def main():
+    st.title("Estrazione dati scontrini")
 
-def generate_completion(prompt):
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {
-            "role": "system",
-            "content": [
-                {
-                "type": "text",
-                "text": "You are an helpful assistant\n"
-                }
-            ]
-            },
-            {
-            "role": "user",
-            "content": [
-                {
-                "type": "text",
-                "text": prompt
-                }
-            ]
-            },
-        ],
-        max_tokens=100
+    st.write(
+        """
+        Carica da 2 a 10 file immagine di scontrini (jpeg, png, ecc.).
+        Verrà chiamato il servizio di elaborazione per estrarre i dati e
+        restituire un JSON di riepilogo.
+        """
     )
-    return response.choices[0].message.content
 
-# A simple Streamlit UI
-st.title("OpenAI GPT-3.5 Turbo Demo")
-prompt = st.text_input("Enter a prompt:")
+    # Permetti il caricamento multiplo di file da 2 a 10
+    uploaded_files = st.file_uploader(
+        "Carica i tuoi scontrini",
+        type=["jpg", "jpeg", "png"],
+        accept_multiple_files=True
+    )
 
-if st.button("Generate"):
-    if prompt:
-        completion = generate_completion(prompt)
-        st.markdown(completion)
-    else:
-        st.write("Please enter a prompt.")
+    # Controlliamo la quantità minima e massima
+    if uploaded_files:
+        if len(uploaded_files) < 2:
+            st.warning("Devi caricare almeno 2 file.")
+        elif len(uploaded_files) > 10:
+            st.warning("Puoi caricare al massimo 10 file.")
+        else:
+            if st.button("Elabora Scontrini"):
+                with st.spinner("Elaborazione in corso..."):
+                    # Richiama la funzione di elaborazione
+                    output_json = process_receipts(uploaded_files)
+                
+                # Mostra i risultati
+                st.subheader("Risultato dell'elaborazione:")
+                st.json(output_json)
+
+
+if __name__ == "__main__":
+    main()

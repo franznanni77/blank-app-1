@@ -1,26 +1,32 @@
 import base64
+import io
 import json
+import os
+# Se usi openai, assicurati di aver installato la libreria: pip install openai
 import openai
 
-# Se preferisci, puoi assegnare la tua API key direttamente qui
-# openai.api_key = "la-tua-api-key"
+# Puoi settare la tua API key di OpenAI in vari modi
+# ad es. come variabile d'ambiente: os.environ["OPENAI_API_KEY"] = "la-tua-chiave"
+# oppure direttamente in codice (non consigliato in produzione)
+# openai.api_key = "la-tua-chiave-segreta"
 
 def process_receipts(uploaded_files):
     """
-    Questa funzione riceve una lista di file da Streamlit
-    e invia ciascun file a OpenAI per l'estrazione dei dati.
-    Restituisce un JSON con i risultati.
+    Questa funzione prende una lista di file caricati da Streamlit (in-memory)
+    e invia ogni file a OpenAI (o un endpoint analogo) per ottenere le informazioni.
+    Restituisce un JSON riepilogativo dell’estrazione.
     """
 
     results = []
 
-    for file_data in uploaded_files:
-        # Legge il contenuto binario del file
-        content = file_data.read()
-        # Converte in base64
+    # Iteriamo su ogni file caricato
+    for f in uploaded_files:
+        # Converti il file in base64 (come indicato nel tuo esempio)
+        content = f.read()
         base64_content = base64.b64encode(content).decode("utf-8")
 
-        # Costruisce il messaggio da inviare a OpenAI
+        # Costruisci i messaggi che verranno passati a OpenAI
+        # Esempio semplificato sulla base del codice condiviso
         messages = [
             {
                 "role": "system",
@@ -59,10 +65,12 @@ def process_receipts(uploaded_files):
             }
         ]
 
+        # Esempio di chiamata a openai.ChatCompletion.create
+        # NOTA: Nel tuo codice originale usi client = OpenAI() con client.chat.completions.create
+        # Qui usiamo la sintassi classica di openai. Adatta di conseguenza se necessario.
         try:
-            # Chiamata a OpenAI (versione > 1.0.0)
             response = openai.ChatCompletion.create(
-                model="gpt-4o-mini",  # Sostituisci con un modello valido nel tuo ambiente
+                model="gpt-4o-mini",  # Usa il modello appropriato
                 messages=messages,
                 temperature=0.22,
                 max_tokens=2048,
@@ -70,23 +78,28 @@ def process_receipts(uploaded_files):
                 frequency_penalty=0,
                 presence_penalty=0
             )
-
-            # Il testo di completamento (potrebbe contenere un JSON)
+            
+            # Esempio di estrazione dal response
+            # Dovrai adattare la logica a come il tuo modello risponde
+            # Nell'esempio ipotizziamo che la risposta finale contenga un JSON
+            # direttamente nel campo `choices[0].message.content`.
             completion_text = response.choices[0].message["content"]
 
-            # Tenta di convertire la stringa in JSON
+            # Convertiamo la stringa JSON in oggetto python
+            # Attenzione: se il modello restituisce testo extra,
+            # potrebbe essere necessario fare un parsing più robusto
             try:
                 json_data = json.loads(completion_text)
             except json.JSONDecodeError:
-                # In caso di fallimento nel parsing
                 json_data = {"errore": "Impossibile convertire la risposta in JSON"}
 
             results.append(json_data)
 
         except Exception as e:
-            # Cattura eventuali errori (rete, timeout, ecc.)
+            # Gestione errori di rete, parsing, ecc.
             results.append({"errore": str(e)})
 
-    # Restituisce un unico JSON contenente i risultati di tutti i file elaborati
+    # Facoltativamente, puoi restituire un JSON unico che raggruppa tutti i risultati
+    # Oppure un array di JSON, uno per ogni file
     output = {"risultati": results}
     return output
