@@ -1,7 +1,4 @@
 import streamlit as st
-<<<<<<< HEAD
-from openai_processing import process_receipts
-=======
 import base64
 import os
 from PIL import Image
@@ -28,12 +25,12 @@ def extract_text_from_image(image_file):
     # Initialize OpenAI client
     client = OpenAI(api_key=api_key)
 
-    # Encode the image 2
+    # Encode the image
     base64_image = encode_image(image_file)
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4-vision-preview",
             messages=[
                 {
                     "role": "user",
@@ -60,7 +57,6 @@ def extract_text_from_image(image_file):
     except Exception as e:
         st.error(f"Error making request to OpenAI API: {str(e)}")
         return None
->>>>>>> 976f5f3 (31)
 
 def main():
     st.title("Image Text Extractor")
