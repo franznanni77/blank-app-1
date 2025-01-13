@@ -1,39 +1,91 @@
 import streamlit as st
-from openai_processing import process_receipts
+import base64
+import os
+from PIL import Image
+import io
+from openai import OpenAI
+
+def encode_image(image_file):
+    """
+    Encode the uploaded image file to base64
+    """
+    return base64.b64encode(image_file.getvalue()).decode('utf-8')
+
+def extract_text_from_image(image_file):
+    """
+    Send the image to OpenAI API and get text extraction
+    """
+    # Get API key from environment variable
+    api_key = os.environ.get("OPENAI_API_KEY")
+    
+    if not api_key:
+        st.error("Please set the OPENAI_API_KEY environment variable")
+        return None
+
+    # Initialize OpenAI client
+    client = OpenAI(api_key=api_key)
+
+    # Encode the image
+    base64_image = encode_image(image_file)
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4-vision-preview",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Extract all the text in this image. "
+                                   "If there is a header or a footer, just ignore it. "
+                                   "Extract tables as markdown tables. "
+                                   "Don't use the subtitles for the list items, just return the list as text."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=300
+        )
+        return response
+    except Exception as e:
+        st.error(f"Error making request to OpenAI API: {str(e)}")
+        return None
 
 def main():
-    st.title("Estrazione dati scontrini")
+    st.title("Image Text Extractor")
+    st.write("Upload an image to extract text from it")
 
-    st.write(
-        """
-        Carica da 2 a 10 file immagine di scontrini (jpeg, png, ecc.).
-        Verrà chiamato il servizio di elaborazione per estrarre i dati e
-        restituire un JSON di riepilogo.
-        """
-    )
+    # File uploader
+    uploaded_file = st.file_uploader("Choose an image file", type=['jpg', 'jpeg', 'png'])
 
-    # Permetti il caricamento multiplo di file da 2 a 10
-    uploaded_files = st.file_uploader(
-        "Carica i tuoi scontrini",
-        type=["jpg", "jpeg", "png"],
-        accept_multiple_files=True
-    )
+    if uploaded_file is not None:
+        # Display the uploaded image
+        image = Image.open(uploaded_file)
+        st.image(image, caption='Uploaded Image', use_column_width=True)
 
-    # Verifica quantità minima e massima di file
-    if uploaded_files:
-        if len(uploaded_files) < 2:
-            st.warning("Devi caricare almeno 2 file.")
-        elif len(uploaded_files) > 10:
-            st.warning("Puoi caricare al massimo 10 file.")
-        else:
-            # Bottone per l'elaborazione
-            if st.button("Elabora Scontrini"):
-                with st.spinner("Elaborazione in corso..."):
-                    output_json = process_receipts(uploaded_files)
+        # Add a button to process the image
+        if st.button('Extract Text'):
+            with st.spinner('Processing image...'):
+                # Reset the file pointer to the beginning
+                uploaded_file.seek(0)
+                
+                # Process the image
+                result = extract_text_from_image(uploaded_file)
 
-                # Mostra i risultati
-                st.subheader("Risultato dell'elaborazione:")
-                st.json(output_json)
+                if result:
+                    # Display the extracted text
+                    extracted_text = result.choices[0].message.content
+                    st.write("### Extracted Text:")
+                    st.write(extracted_text)
+                else:
+                    st.error("Failed to extract text from the image")
 
 if __name__ == "__main__":
     main()
